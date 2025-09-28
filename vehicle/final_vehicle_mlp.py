@@ -1,8 +1,3 @@
-"""
-Final Working Vehicle Classification MLP using Scikit-learn
-Dataset: Statlog (Vehicle Silhouettes) from UCI Machine Learning Repository
-"""
-
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -13,12 +8,10 @@ import urllib.request
 import sys
 
 def load_vehicle_data():
-    """Load the vehicle dataset from UCI"""
     print("="*60)
     print("LOADING STATLOG VEHICLE SILHOUETTES DATASET")
     print("="*60)
     
-    # URLs for all parts of the dataset
     urls = [
         "https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/vehicle/xaa.dat",
         "https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/vehicle/xab.dat",
@@ -50,15 +43,12 @@ def load_vehicle_data():
     
     print(f"Total samples loaded: {len(all_data)}")
     
-    # Convert to DataFrame
     columns = [f'feature_{i}' for i in range(18)] + ['class']
     df = pd.DataFrame(all_data, columns=columns)
     
-    # Convert features to numeric
     for col in columns[:-1]:
         df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    # Remove rows with NaN values
     df = df.dropna()
     
     print(f"Dataset shape after cleaning: {df.shape}")
@@ -68,28 +58,23 @@ def load_vehicle_data():
     return df
 
 def preprocess_data(df):
-    """Preprocess the dataset"""
     print("\n" + "="*60)
     print("PREPROCESSING DATA")
     print("="*60)
     
-    # Separate features and labels
-    X = df.iloc[:, :-1].values  # All columns except the last one
-    y = df.iloc[:, -1].values   # Last column (class labels)
+    X = df.iloc[:, :-1].values 
+    y = df.iloc[:, -1].values   
     
-    # Encode labels to numeric values
     le = LabelEncoder()
     y_encoded = le.fit_transform(y)
     
     print(f"Original classes: {le.classes_}")
     print(f"Encoded classes: {np.unique(y_encoded)}")
     
-    # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
         X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
     )
     
-    # Further split training data into train and validation
     X_train, X_val, y_train, y_val = train_test_split(
         X_train, y_train, test_size=0.2, random_state=42, stratify=y_train
     )
@@ -107,17 +92,15 @@ def preprocess_data(df):
     return X_train_scaled, X_val_scaled, X_test_scaled, y_train, y_val, y_test, le, scaler
 
 def build_and_train_mlp(X_train, y_train, X_val, y_val):
-    """Build and train the MLP model"""
     print("\n" + "="*60)
     print("BUILDING AND TRAINING MLP MODEL")
     print("="*60)
     
-    # Create MLPClassifier
     mlp = MLPClassifier(
-        hidden_layer_sizes=(128, 64, 32),  # 3 hidden layers
+        hidden_layer_sizes=(128, 64, 32), 
         activation='relu',
         solver='adam',
-        alpha=0.001,  # L2 regularization
+        alpha=0.001, 
         batch_size=32,
         learning_rate='adaptive',
         learning_rate_init=0.001,
@@ -138,7 +121,6 @@ def build_and_train_mlp(X_train, y_train, X_val, y_val):
     print("\nTraining model...")
     mlp.fit(X_train, y_train)
     
-    # Get training and validation scores
     train_score = mlp.score(X_train, y_train)
     val_score = mlp.score(X_val, y_val)
     
@@ -149,29 +131,23 @@ def build_and_train_mlp(X_train, y_train, X_val, y_val):
     return mlp, train_score, val_score
 
 def evaluate_model(mlp, X_test, y_test, le):
-    """Evaluate the model"""
     print("\n" + "="*60)
     print("EVALUATING MODEL")
     print("="*60)
     
-    # Make predictions
     y_pred = mlp.predict(X_test)
     y_pred_proba = mlp.predict_proba(X_test)
     
-    # Calculate accuracy
     accuracy = accuracy_score(y_test, y_pred)
     print(f"Test Accuracy: {accuracy:.4f}")
     
-    # Classification report
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred, target_names=le.classes_))
     
-    # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)
     print("\nConfusion Matrix:")
     print(cm)
     
-    # Per-class accuracy
     print("\nPer-class Accuracy:")
     for i, class_name in enumerate(le.classes_):
         class_mask = y_test == i
@@ -182,25 +158,19 @@ def evaluate_model(mlp, X_test, y_test, le):
     return y_pred, y_pred_proba, accuracy, cm
 
 def main():
-    """Main function"""
     print("VEHICLE SILHOUETTES CLASSIFICATION USING MLP")
     print("Dataset: Statlog (Vehicle Silhouettes) from UCI")
     print("Implementation: Scikit-learn MLPClassifier")
     
     try:
-        # Load data
         df = load_vehicle_data()
         
-        # Preprocess data
         X_train, X_val, X_test, y_train, y_val, y_test, le, scaler = preprocess_data(df)
         
-        # Build and train model
         mlp, train_score, val_score = build_and_train_mlp(X_train, y_train, X_val, y_val)
         
-        # Evaluate model
         y_pred, y_pred_proba, test_accuracy, cm = evaluate_model(mlp, X_test, y_test, le)
         
-        # Final results
         print("\n" + "="*60)
         print("FINAL RESULTS")
         print("="*60)
@@ -209,7 +179,6 @@ def main():
         print(f"Test Accuracy: {test_accuracy:.4f}")
         print(f"Number of training iterations: {mlp.n_iter_}")
         
-        # Model summary
         print(f"\nModel Summary:")
         print(f"Total parameters: {mlp.coefs_[0].size + mlp.coefs_[1].size + mlp.coefs_[2].size + mlp.coefs_[3].size}")
         print(f"Input features: {X_train.shape[1]}")
